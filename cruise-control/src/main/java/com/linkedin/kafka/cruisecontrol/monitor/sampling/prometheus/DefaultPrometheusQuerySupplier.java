@@ -21,7 +21,7 @@ import static com.linkedin.kafka.cruisecontrol.metricsreporter.metric.RawMetricT
  * See {@link PrometheusQuerySupplier}
  */
 public class DefaultPrometheusQuerySupplier implements CruiseControlConfigurable, PrometheusQuerySupplier {
-    private final Map<RawMetricType, String> _typeToQuery = new HashMap<>();
+    protected final Map<RawMetricType, String> _typeToQuery = new HashMap<>();
     // Config name visible to tests
     static final String PROMETHEUS_BROKER_METRICS_SCRAPING_INTERVAL_SECONDS = "prometheus.broker.metrics.scraping.frequency.seconds";
     private static final Integer DEFAULT_PROMETHEUS_BROKER_METRICS_SCRAPING_INTERVAL_SECONDS = 60;
@@ -59,7 +59,11 @@ public class DefaultPrometheusQuerySupplier implements CruiseControlConfigurable
         return (int) (Math.ceil(scrapingIntervalSeconds * 2.0 / 60));
     }
 
-    private void buildTypeToQueryMap() {
+    protected int getBrokerCpuUtilQueryMinutes() {
+        return _brokerCpuUtilQueryMinutes;
+    }
+
+    protected void buildTypeToQueryMap() {
         // broker metrics
         _typeToQuery.put(BROKER_CPU_UTIL,
             String.format("1 - avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[%dm]))",
