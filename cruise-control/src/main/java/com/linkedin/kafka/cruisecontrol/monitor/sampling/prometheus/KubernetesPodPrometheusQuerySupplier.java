@@ -1,6 +1,7 @@
 package com.linkedin.kafka.cruisecontrol.monitor.sampling.prometheus;
 
 import com.linkedin.cruisecontrol.common.config.ConfigException;
+import com.linkedin.kafka.cruisecontrol.metricsreporter.metric.RawMetricType;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -8,18 +9,24 @@ import java.util.stream.Collectors;
 import static com.linkedin.kafka.cruisecontrol.metricsreporter.metric.RawMetricType.*;
 
 public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuerySupplier {
+    private static final String CLUSTER_CONFIG = "prometheus.query.cluster";
     private static final String NAMESPACE_CONFIG = "prometheus.query.namespace";
 
     private static final Set<Label> BROKER_TOPIC_LABELS = Set.of(Label.missing("topic"));
     private static final Label TOPIC_TOPIC_LABEL = Label.exists("topic");
     private static final Label NO_QUANTILE_LABEL = Label.missing("quantile");
 
+    private String _cluster;
     private String _namespace;
 
     @Override
     public void configure(Map<String, ?> configs) {
         super.configure(configs);
 
+        if (!configs.containsKey(CLUSTER_CONFIG)) {
+            throw new ConfigException(String.format("Missing required config: %s", CLUSTER_CONFIG));
+        }
+        _cluster = (String) configs.get(CLUSTER_CONFIG);
         if (!configs.containsKey(NAMESPACE_CONFIG)) {
             throw new ConfigException(String.format("Missing required config: %s", NAMESPACE_CONFIG));
         }
@@ -97,6 +104,15 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
 
         // Partition metrics
         _typeToQuery.put(PARTITION_SIZE, buildQuery("kafka_log_log_size", Set.of(Label.exists("topic"), Label.exists("partition")), Set.of("partition")));
+
+        addInstanceLabelReplaceToAllQueries();
+   }
+
+   private void addInstanceLabelReplaceToAllQueries() {
+        for (Map.Entry<RawMetricType, String> entry : _typeToQuery.entrySet()) {
+            String updated = String.format("label_replace(%s, \"instance\", \"$1.kafka-headless.%s.%s.local:9092\", \"pod\", \"(.+)\")", entry.getValue(), _namespace, _cluster);
+            _typeToQuery.put(entry.getKey(), updated);
+        }
    }
 
     private String buildQuery(String metric) {
