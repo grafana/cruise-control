@@ -103,7 +103,7 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
         _typeToQuery.put(TOPIC_MESSAGES_IN_PER_SEC, buildRateQuery("kafka_server_brokertopicmetrics_messagesinpersec", Set.of(TOPIC_TOPIC_LABEL, NO_QUANTILE_LABEL), Set.of("topic")));
 
         // Partition metrics
-        _typeToQuery.put(PARTITION_SIZE, buildQuery("kafka_log_log_size", Set.of(Label.exists("topic"), Label.exists("partition")), Set.of("partition")));
+        _typeToQuery.put(PARTITION_SIZE, buildQuery("kafka_log_log_size", Set.of(Label.exists("topic"), Label.exists("partition")), Set.of("topic", "partition")));
 
         addInstanceLabelReplaceToAllQueries();
    }
