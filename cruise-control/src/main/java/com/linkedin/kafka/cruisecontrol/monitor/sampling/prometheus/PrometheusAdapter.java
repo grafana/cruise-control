@@ -25,6 +25,8 @@ import org.apache.http.util.EntityUtils;
 import com.google.gson.Gson;
 import com.linkedin.kafka.cruisecontrol.monitor.sampling.prometheus.model.PrometheusQueryResult;
 import com.linkedin.kafka.cruisecontrol.monitor.sampling.prometheus.model.PrometheusResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.linkedin.kafka.cruisecontrol.KafkaCruiseControlUtils.SEC_TO_MS;
 import static com.linkedin.cruisecontrol.common.utils.Utils.validateNotNull;
@@ -33,6 +35,8 @@ import static com.linkedin.cruisecontrol.common.utils.Utils.validateNotNull;
  * This class provides an adapter to make queries to a Prometheus Server to fetch metric values.
  */
 class PrometheusAdapter {
+    private static final Logger LOG = LoggerFactory.getLogger(PrometheusAdapter.class);
+
     private static final Gson GSON = new Gson();
     static final String QUERY_RANGE_API_PATH = "/api/v1/query_range";
     static final String SUCCESS = "success";
@@ -69,7 +73,7 @@ class PrometheusAdapter {
         if (_prometheusBasicAuth != null && !_prometheusBasicAuth.isEmpty()) {
             httpPost.addHeader(
                     "Authorization",
-                    Base64.getEncoder().encodeToString(_prometheusBasicAuth.getBytes(StandardCharsets.UTF_8)));
+                    "Basic " + Base64.getEncoder().encodeToString(_prometheusBasicAuth.getBytes(StandardCharsets.UTF_8)));
         }
 
         List<NameValuePair> data = new ArrayList<>();
