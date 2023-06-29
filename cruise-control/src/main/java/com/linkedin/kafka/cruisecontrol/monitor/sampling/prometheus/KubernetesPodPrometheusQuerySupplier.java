@@ -21,8 +21,6 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
 
     @Override
     public void configure(Map<String, ?> configs) {
-        super.configure(configs);
-
         if (!configs.containsKey(CLUSTER_CONFIG)) {
             throw new ConfigException(String.format("Missing required config: %s", CLUSTER_CONFIG));
         }
@@ -31,6 +29,8 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
             throw new ConfigException(String.format("Missing required config: %s", NAMESPACE_CONFIG));
         }
         _namespace = (String) configs.get(NAMESPACE_CONFIG);
+
+        super.configure(configs);
     }
 
     @Override
