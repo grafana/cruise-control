@@ -198,7 +198,7 @@ public class PrometheusMetricSampler extends AbstractMetricSampler {
 
                     This can be really frequent, and hence, we are only going to log them at trace level.
                      */
-                    LOG.trace("Invalid query result received from Prometheus for query {}", prometheusQuery, e);
+                    LOG.error(String.format("Invalid query result received from Prometheus for query '%s'", prometheusQuery), e);
                     resultsSkipped++;
                 }
             }

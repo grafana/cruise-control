@@ -35,8 +35,6 @@ import static com.linkedin.cruisecontrol.common.utils.Utils.validateNotNull;
  * This class provides an adapter to make queries to a Prometheus Server to fetch metric values.
  */
 class PrometheusAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(PrometheusAdapter.class);
-
     private static final Gson GSON = new Gson();
     static final String QUERY_RANGE_API_PATH = "/api/v1/query_range";
     static final String SUCCESS = "success";
@@ -75,8 +73,6 @@ class PrometheusAdapter {
                     "Authorization",
                     "Basic " + Base64.getEncoder().encodeToString(_prometheusBasicAuth.getBytes(StandardCharsets.UTF_8)));
         }
-
-        LOG.info(queryString); // FIXME
 
         List<NameValuePair> data = new ArrayList<>();
         data.add(new BasicNameValuePair(QUERY, queryString));
