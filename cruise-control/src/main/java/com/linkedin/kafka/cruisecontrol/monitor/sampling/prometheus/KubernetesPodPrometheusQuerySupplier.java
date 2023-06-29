@@ -184,7 +184,7 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
         }
 
         private String build() {
-            return String.format("%s%s%s", key, op, value);
+            return String.format("%s%s\"%s\"", key, op, value);
         }
 
         @Override

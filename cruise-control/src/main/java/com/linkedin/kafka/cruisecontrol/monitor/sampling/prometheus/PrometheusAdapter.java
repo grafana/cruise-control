@@ -76,6 +76,8 @@ class PrometheusAdapter {
                     "Basic " + Base64.getEncoder().encodeToString(_prometheusBasicAuth.getBytes(StandardCharsets.UTF_8)));
         }
 
+        LOG.info(queryString); // FIXME
+
         List<NameValuePair> data = new ArrayList<>();
         data.add(new BasicNameValuePair(QUERY, queryString));
         /* "start" and "end" are expected to be unix timestamp in seconds (number of seconds since the Unix epoch).
