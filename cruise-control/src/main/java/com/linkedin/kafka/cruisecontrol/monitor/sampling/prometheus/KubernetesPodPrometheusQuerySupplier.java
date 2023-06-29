@@ -110,7 +110,7 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
 
    private void addInstanceLabelReplaceToAllQueries() {
         for (Map.Entry<RawMetricType, String> entry : _typeToQuery.entrySet()) {
-            String updated = String.format("label_replace(%s, \"instance\", \"$1.kafka-headless.%s.%s.local:9092\", \"pod\", \"(.+)\")", entry.getValue(), _namespace, _cluster);
+            String updated = String.format("label_replace(%s, \"instance\", \"$1.kafka-headless.%s.svc.%s.local:9092\", \"pod\", \"(.+)\")", entry.getValue(), _namespace, _cluster);
             _typeToQuery.put(entry.getKey(), updated);
         }
    }
