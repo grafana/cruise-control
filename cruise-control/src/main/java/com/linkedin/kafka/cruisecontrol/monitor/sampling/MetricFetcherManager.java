@@ -35,7 +35,7 @@ import static com.linkedin.kafka.cruisecontrol.KafkaCruiseControlUtils.METRIC_FE
  * The class manages the metric fetchers. It periodically kicks off the sampling and refreshes the metadata as well.
  */
 public class MetricFetcherManager {
-  static final String BROKER_CAPACITY_CONFIG_RESOLVER_OBJECT_CONFIG = "broker.capacity.config.resolver.object";
+  public static final String BROKER_CAPACITY_CONFIG_RESOLVER_OBJECT_CONFIG = "broker.capacity.config.resolver.object";
   private static final Logger LOG = LoggerFactory.getLogger(MetricFetcherManager.class);
   static final int SUPPORTED_NUM_METRIC_FETCHER = 1;
 

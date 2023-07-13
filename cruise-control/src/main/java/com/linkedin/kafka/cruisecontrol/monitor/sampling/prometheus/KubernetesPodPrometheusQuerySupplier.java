@@ -1,9 +1,14 @@
 package com.linkedin.kafka.cruisecontrol.monitor.sampling.prometheus;
 
 import com.linkedin.cruisecontrol.common.config.ConfigException;
+import com.linkedin.kafka.cruisecontrol.config.BrokerCapacityConfigResolver;
+import com.linkedin.kafka.cruisecontrol.config.BrokerCapacityInfo;
+import com.linkedin.kafka.cruisecontrol.exception.BrokerCapacityResolutionException;
 import com.linkedin.kafka.cruisecontrol.metricsreporter.metric.RawMetricType;
+import com.linkedin.kafka.cruisecontrol.monitor.sampling.MetricFetcherManager;
 
 import java.util.*;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static com.linkedin.kafka.cruisecontrol.metricsreporter.metric.RawMetricType.*;
@@ -19,6 +24,8 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
     private String _cluster;
     private String _namespace;
 
+    private BrokerCapacityConfigResolver _brokerCapacityConfigResolver;
+
     @Override
     public void configure(Map<String, ?> configs) {
         if (!configs.containsKey(CLUSTER_CONFIG)) {
@@ -30,13 +37,22 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
         }
         _namespace = (String) configs.get(NAMESPACE_CONFIG);
 
+        _brokerCapacityConfigResolver = (BrokerCapacityConfigResolver) configs.get(MetricFetcherManager.BROKER_CAPACITY_CONFIG_RESOLVER_OBJECT_CONFIG);
+
         super.configure(configs);
     }
 
     @Override
     protected void buildTypeToQueryMap() {
+        BrokerCapacityInfo capacity;
+        try {
+            capacity = _brokerCapacityConfigResolver.capacityForBroker("", "", 0, 1000, true);
+        } catch (TimeoutException | BrokerCapacityResolutionException e) {
+            throw new RuntimeException(e);
+        }
+
         // Broker metrics
-        _typeToQuery.put(BROKER_CPU_UTIL, buildRateQuery("container_cpu_usage_seconds_total"));
+        _typeToQuery.put(BROKER_CPU_UTIL, String.format("%s / %f", buildRateQuery("container_cpu_usage_seconds_total"), capacity.numCpuCores()));
         _typeToQuery.put(ALL_TOPIC_BYTES_IN, buildRateQuery("kafka_server_brokertopicmetrics_bytesinpersec", BROKER_TOPIC_LABELS));
         _typeToQuery.put(ALL_TOPIC_BYTES_OUT, buildRateQuery("kafka_server_brokertopicmetrics_bytesoutpersec", BROKER_TOPIC_LABELS));
         _typeToQuery.put(ALL_TOPIC_REPLICATION_BYTES_IN, buildRateQuery("kafka_server_brokertopicmetrics_replicationbytesinpersec"));
