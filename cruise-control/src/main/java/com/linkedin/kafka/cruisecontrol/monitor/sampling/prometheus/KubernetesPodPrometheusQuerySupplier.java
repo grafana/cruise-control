@@ -1,3 +1,7 @@
+/*
+ * Copyright 2023 LinkedIn Corp. Licensed under the BSD 2-Clause License (the "License"). See License in the project root for license information.
+ */
+
 package com.linkedin.kafka.cruisecontrol.monitor.sampling.prometheus;
 
 import com.linkedin.cruisecontrol.common.config.ConfigException;
@@ -6,8 +10,11 @@ import com.linkedin.kafka.cruisecontrol.config.BrokerCapacityInfo;
 import com.linkedin.kafka.cruisecontrol.exception.BrokerCapacityResolutionException;
 import com.linkedin.kafka.cruisecontrol.metricsreporter.metric.RawMetricType;
 import com.linkedin.kafka.cruisecontrol.monitor.sampling.MetricFetcherManager;
-
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -173,9 +180,9 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
     }
 
     private static final class Label {
-        private final String key;
-        private final String value;
-        private final String op;
+        private final String _key;
+        private final String _value;
+        private final String _op;
 
         private static Label of(String key, String value) {
             return new Label(key, value);
@@ -189,31 +196,35 @@ public class KubernetesPodPrometheusQuerySupplier extends DefaultPrometheusQuery
             return new Label(key, "");
         }
 
+        private Label(String key, String value, String op) {
+            this._key = key;
+            this._value = value;
+            this._op = op;
+        }
+
         private Label(String key, String value) {
             this(key, value, "=");
         }
 
-        private Label(String key, String value, String op) {
-            this.key = key;
-            this.value = value;
-            this.op = op;
-        }
-
         private String build() {
-            return String.format("%s%s\"%s\"", key, op, value);
+            return String.format("%s%s\"%s\"", _key, _op, _value);
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             Label label = (Label) o;
-            return Objects.equals(key, label.key) && Objects.equals(value, label.value) && Objects.equals(op, label.op);
+            return Objects.equals(_key, label._key) && Objects.equals(_value, label._value) && Objects.equals(_op, label._op);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(key, value, op);
+            return Objects.hash(_key, _value, _op);
         }
     }
 }
