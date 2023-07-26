@@ -90,10 +90,8 @@ public class BasicProvisioner implements Provisioner {
     // Retrieve partition provisioner class.
     Class<?> partitionProvisionerClass = retrieveProvisionerClass(configs, PARTITION_PROVISIONER_CLASS_CONFIG, DEFAULT_PARTITION_PROVISIONER_CLASS);
 
-    // Configure the broker and partition provisioners.
-    Map<String, Object> provisionerConfigs = Collections.singletonMap(KAFKA_CRUISE_CONTROL_OBJECT_CONFIG, _kafkaCruiseControl);
-    _basicBrokerProvisioner = getConfiguredInstance(brokerProvisionerClass, Provisioner.class, provisionerConfigs);
-    _partitionProvisioner = getConfiguredInstance(partitionProvisionerClass, Provisioner.class, provisionerConfigs);
+    _basicBrokerProvisioner = getConfiguredInstance(brokerProvisionerClass, Provisioner.class, (Map<String, Object>) configs);
+    _partitionProvisioner = getConfiguredInstance(partitionProvisionerClass, Provisioner.class, (Map<String, Object>) configs);
   }
 
   private static Class<?> retrieveProvisionerClass(Map<String, ?> configs, String provisionerClassConfig, Class<?> defaultProvisionerClass) {
