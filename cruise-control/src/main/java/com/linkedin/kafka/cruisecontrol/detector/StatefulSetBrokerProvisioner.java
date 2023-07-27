@@ -6,7 +6,6 @@ package com.linkedin.kafka.cruisecontrol.detector;
 
 import com.linkedin.cruisecontrol.common.config.ConfigException;
 import com.linkedin.kafka.cruisecontrol.analyzer.ProvisionRecommendation;
-import com.linkedin.kafka.cruisecontrol.analyzer.ProvisionStatus;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -16,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1StatefulSet;
 import io.kubernetes.client.openapi.models.V1StatefulSetSpec;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -59,9 +59,16 @@ public class StatefulSetBrokerProvisioner extends BasicBrokerProvisioner {
                 return new ProvisionerState(COMPLETED_WITH_ERROR, "Error verifying existing replica count");
             }
 
-            Integer targetNumReplicas = rec.status() == ProvisionStatus.UNDER_PROVISIONED
-                    ? existingNumReplicas + rec.numBrokers()
-                    : existingNumReplicas - rec.numBrokers();
+            switch (rec.status()) {
+                case UNDECIDED:
+                case RIGHT_SIZED:
+                    return new ProvisionerState(COMPLETED, "Skipped; no right-sizing action recommended.");
+                case OVER_PROVISIONED:
+                    return new ProvisionerState(COMPLETED,
+                            String.format("Skipped recommendation to remove %d brokers.", rec.numBrokers()));
+            }
+
+            Integer targetNumReplicas = existingNumReplicas + rec.numBrokers();
 
             PatchUtils.PatchCallFunc patch = () -> api.patchNamespacedStatefulSetAsync(
                     "kafka",
@@ -72,8 +79,7 @@ public class StatefulSetBrokerProvisioner extends BasicBrokerProvisioner {
             PatchUtils.patch(V1Deployment.class, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
 
             return new ProvisionerState(COMPLETED,
-                    String.format("Provisioning complete; broker count changed from %d to %d",
-                            existingNumReplicas, targetNumReplicas));
+                    String.format("Recommendation applied; broker count changed from %d to %d", existingNumReplicas, targetNumReplicas));
         } catch (ApiException e) {
             throw new RuntimeException(e);
         }
