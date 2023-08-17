@@ -6,17 +6,18 @@ package com.linkedin.kafka.cruisecontrol.detector;
 
 import com.linkedin.cruisecontrol.common.config.ConfigException;
 import com.linkedin.kafka.cruisecontrol.analyzer.ProvisionRecommendation;
-import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.AppsV1Api;
-import io.kubernetes.client.openapi.models.V1Deployment;
-import io.kubernetes.client.openapi.models.V1StatefulSet;
-import io.kubernetes.client.openapi.models.V1StatefulSetSpec;
-import io.kubernetes.client.util.ClientBuilder;
-import io.kubernetes.client.util.PatchUtils;
 
-import java.io.IOException;
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
+import io.fabric8.kubernetes.api.model.GenericKubernetesResourceBuilder;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 
 import static com.linkedin.kafka.cruisecontrol.detector.ProvisionerState.State.COMPLETED;
@@ -25,8 +26,8 @@ import static com.linkedin.kafka.cruisecontrol.detector.ProvisionerState.State.C
 public class StatefulSetBrokerProvisioner extends BasicBrokerProvisioner {
     private static final String NAMESPACE_CONFIG = "kubernetes.namespace";
     private String _namespace;
+    private static final Logger LOG = LoggerFactory.getLogger(StatefulSetBrokerProvisioner.class);
 
-    private ApiClient _client;
 
     @Override
     public void configure(Map<String, ?> configs) {
@@ -35,53 +36,87 @@ public class StatefulSetBrokerProvisioner extends BasicBrokerProvisioner {
         }
         _namespace = (String) configs.get(NAMESPACE_CONFIG);
 
-        try {
-            _client = ClientBuilder.cluster().build();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
         super.configure(configs);
     }
 
     @Override
     protected ProvisionerState addOrRemoveBrokers(ProvisionRecommendation rec) {
-        try {
-            AppsV1Api api = new AppsV1Api(_client);
 
-            V1StatefulSet existing = api.readNamespacedStatefulSet("kafka", _namespace, "false");
-            V1StatefulSetSpec spec = existing.getSpec();
-            if (spec == null) {
+        try (final KubernetesClient client = new KubernetesClientBuilder().build()) {
+            Integer currentNumReplicas = client
+                    .apps()
+                    .statefulSets()
+                    .inNamespace(_namespace)
+                    .withName("kafka")
+                    .get()
+                    .getSpec()
+                    .getReplicas();
+            if (currentNumReplicas == null) {
                 return new ProvisionerState(COMPLETED_WITH_ERROR, "Error verifying existing replica count");
             }
-            Integer existingNumReplicas = spec.getReplicas();
-            if (existingNumReplicas == null) {
-                return new ProvisionerState(COMPLETED_WITH_ERROR, "Error verifying existing replica count");
-            }
 
+            Integer targetNumReplicas;
             switch (rec.status()) {
                 case UNDECIDED:
                 case RIGHT_SIZED:
                     return new ProvisionerState(COMPLETED, "Skipped; no right-sizing action recommended.");
                 case OVER_PROVISIONED:
-                    return new ProvisionerState(COMPLETED,
-                            String.format("Skipped recommendation to remove %d brokers.", rec.numBrokers()));
+                    targetNumReplicas = currentNumReplicas - rec.numBrokers();
+                    break;
+                case UNDER_PROVISIONED:
+                    targetNumReplicas = currentNumReplicas + rec.numBrokers();
+                    break;
+                default:
+                    return new ProvisionerState(COMPLETED_WITH_ERROR,
+                            String.format("Error applying recommendation; unknown status %s", rec.status()));
             }
 
-            Integer targetNumReplicas = existingNumReplicas + rec.numBrokers();
+            if (targetNumReplicas < 0) {
+                return new ProvisionerState(COMPLETED_WITH_ERROR,
+                        String.format("Error applying recommendation; target replica count %d is less than zero", targetNumReplicas));
+            }
 
-            PatchUtils.PatchCallFunc patch = () -> api.patchNamespacedStatefulSetAsync(
-                    "kafka",
-                    _namespace,
-                    new V1Patch(String.format(
-                            "[{\"op\":\"replace\",\"path\":\"/spec/replicas\",\"value\":%d}]", targetNumReplicas)),
-                    null, null, null, null, null, null);
-            PatchUtils.patch(V1Deployment.class, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+            ResourceDefinitionContext scaledObjectCrd = new ResourceDefinitionContext.Builder()
+                    .withGroup("keda.sh")
+                    .withVersion("v1alpha1")
+                    .withKind("ScaledObject")
+                    .withPlural("scaledobjects")
+                    .withNamespaced(true)
+                    .build();
+
+            GenericKubernetesResource kafkaScaledObject = client
+                    .genericKubernetesResources(scaledObjectCrd)
+                    .inNamespace(_namespace)
+                    .withName("kafka")
+                    .get();
+
+            GenericKubernetesResource patch = new GenericKubernetesResourceBuilder()
+                    .withKind(kafkaScaledObject.getKind())
+                    .withNewMetadata()
+                    .withName(kafkaScaledObject.getMetadata().getName())
+                    .withNamespace(kafkaScaledObject.getMetadata().getNamespace())
+                    .withResourceVersion(kafkaScaledObject.getMetadata().getResourceVersion())
+                    .withAnnotations(Map.of("autoscaling.keda.sh/paused-replicas", String.valueOf(targetNumReplicas)))
+                    .endMetadata()
+                    .build();
+
+            client.genericKubernetesResources(scaledObjectCrd)
+                    .inNamespace(_namespace)
+                    .withName("kafka")
+                    .patch(
+                            new PatchContext.Builder()
+                                    .withPatchType(PatchType.SERVER_SIDE_APPLY)
+                                    .withFieldManager("cruise-control")
+                                    .withForce(true)
+                                    .build(),
+                            patch
+                    );
 
             return new ProvisionerState(COMPLETED,
-                    String.format("Recommendation applied; broker count changed from %d to %d", existingNumReplicas, targetNumReplicas));
-        } catch (ApiException e) {
-            throw new RuntimeException(e);
+                    String.format("Recommendation applied; broker count changed from %d to %d", currentNumReplicas, targetNumReplicas));
+        } catch (Exception e) {
+            LOG.error("Error applying recommendation", e);
+            return new ProvisionerState(COMPLETED_WITH_ERROR, e.getMessage());
         }
     }
 }
