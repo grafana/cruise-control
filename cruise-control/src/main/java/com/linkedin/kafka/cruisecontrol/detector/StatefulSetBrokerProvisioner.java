@@ -41,14 +41,6 @@ public class StatefulSetBrokerProvisioner extends BasicBrokerProvisioner {
 
     @Override
     protected ProvisionerState addOrRemoveBrokers(ProvisionRecommendation rec) {
-        switch (rec.status()) {
-            case UNDECIDED:
-            case RIGHT_SIZED:
-                return new ProvisionerState(COMPLETED, "Skipped; no right-sizing action recommended.");
-            case OVER_PROVISIONED:
-                return new ProvisionerState(COMPLETED,
-                        String.format("Skipped recommendation to remove %d brokers.", rec.numBrokers()));
-        }
 
         try (final KubernetesClient client = new KubernetesClientBuilder().build()) {
             Integer currentNumReplicas = client
@@ -63,7 +55,26 @@ public class StatefulSetBrokerProvisioner extends BasicBrokerProvisioner {
                 return new ProvisionerState(COMPLETED_WITH_ERROR, "Error verifying existing replica count");
             }
 
-            Integer targetNumReplicas = currentNumReplicas + rec.numBrokers();
+            Integer targetNumReplicas;
+            switch (rec.status()) {
+                case UNDECIDED:
+                case RIGHT_SIZED:
+                    return new ProvisionerState(COMPLETED, "Skipped; no right-sizing action recommended.");
+                case OVER_PROVISIONED:
+                    targetNumReplicas = currentNumReplicas - rec.numBrokers();
+                    break;
+                case UNDER_PROVISIONED:
+                    targetNumReplicas = currentNumReplicas + rec.numBrokers();
+                    break;
+                default:
+                    return new ProvisionerState(COMPLETED_WITH_ERROR,
+                            String.format("Error applying recommendation; unknown status %s", rec.status()));
+            }
+
+            if (targetNumReplicas < 0) {
+                return new ProvisionerState(COMPLETED_WITH_ERROR,
+                        String.format("Error applying recommendation; target replica count %d is less than zero", targetNumReplicas));
+            }
 
             ResourceDefinitionContext scaledObjectCrd = new ResourceDefinitionContext.Builder()
                     .withGroup("keda.sh")
