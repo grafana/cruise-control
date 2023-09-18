@@ -436,9 +436,12 @@ public abstract class CapacityGoal extends AbstractGoal {
     double destinationReplicaUtilization = destinationReplica.load().expectedUtilizationFor(resource());
 
     double sourceUtilizationDelta = destinationReplicaUtilization - sourceReplicaUtilization;
-    return sourceUtilizationDelta > 0 ? isUtilizationUnderLimitAfterAddingLoad(sourceReplica.broker(), sourceUtilizationDelta)
-                                      : isUtilizationUnderLimitAfterAddingLoad(destinationReplica.broker(),
-                                                                                - sourceUtilizationDelta);
+
+    return isUtilizationUnderLimitAfterAddingLoad(sourceReplica.broker(), destinationReplicaUtilization)
+            && isUtilizationUnderLimitAfterAddingLoad(destinationReplica.broker(), sourceReplicaUtilization)
+            && (sourceUtilizationDelta > 0
+            ? isUtilizationUnderLimitAfterAddingLoad(sourceReplica.broker(), sourceUtilizationDelta)
+            : isUtilizationUnderLimitAfterAddingLoad(destinationReplica.broker(), - sourceUtilizationDelta));
   }
 
   /**

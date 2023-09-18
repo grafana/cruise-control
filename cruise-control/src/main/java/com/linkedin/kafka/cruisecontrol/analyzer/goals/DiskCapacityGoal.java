@@ -41,5 +41,4 @@ public class DiskCapacityGoal extends CapacityGoal {
     // Leadership movement won't cause disk utilization change.
     return action.balancingAction() == ActionType.LEADERSHIP_MOVEMENT ? ACCEPT : super.actionAcceptance(action, clusterModel);
   }
-
 }
