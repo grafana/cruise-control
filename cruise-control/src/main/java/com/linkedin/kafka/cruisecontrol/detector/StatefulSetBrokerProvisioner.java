@@ -6,7 +6,6 @@ package com.linkedin.kafka.cruisecontrol.detector;
 
 import com.linkedin.cruisecontrol.common.config.ConfigException;
 import com.linkedin.kafka.cruisecontrol.analyzer.ProvisionRecommendation;
-
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResourceBuilder;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
@@ -14,10 +13,8 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.kubernetes.client.dsl.base.ResourceDefinitionContext;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 
 import static com.linkedin.kafka.cruisecontrol.detector.ProvisionerState.State.COMPLETED;
@@ -27,7 +24,6 @@ public class StatefulSetBrokerProvisioner extends BasicBrokerProvisioner {
     private static final String NAMESPACE_CONFIG = "kubernetes.namespace";
     private String _namespace;
     private static final Logger LOG = LoggerFactory.getLogger(StatefulSetBrokerProvisioner.class);
-
 
     @Override
     public void configure(Map<String, ?> configs) {
@@ -42,7 +38,7 @@ public class StatefulSetBrokerProvisioner extends BasicBrokerProvisioner {
     @Override
     protected ProvisionerState addOrRemoveBrokers(ProvisionRecommendation rec) {
 
-        try (final KubernetesClient client = new KubernetesClientBuilder().build()) {
+        try (KubernetesClient client = new KubernetesClientBuilder().build()) {
             Integer currentNumReplicas = client
                     .apps()
                     .statefulSets()
