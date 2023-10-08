@@ -243,6 +243,10 @@ public class ExecutionProposal {
     return (_replicasToAdd.size() + _replicasToMoveBetweenDisksByBroker.size()) * _partitionSize;
   }
 
+  public long partitionSize() {
+    return _partitionSize;
+  }
+
   private void validate() {
     // Verify old leader exists.
     if (_oldLeader.brokerId() >= 0 && !_oldReplicas.contains(_oldLeader)) {
@@ -289,7 +293,7 @@ public class ExecutionProposal {
     ExecutionProposal otherProposal = (ExecutionProposal) other;
 
     return _tp.equals(otherProposal._tp)
-        && _oldLeader == otherProposal._oldLeader
+        && _oldLeader.equals(otherProposal._oldLeader)
         && _oldReplicas.equals(otherProposal._oldReplicas)
         && _newReplicas.equals(otherProposal._newReplicas);
   }

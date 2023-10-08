@@ -7,14 +7,14 @@ package com.linkedin.kafka.cruisecontrol.executor.strategy;
 import com.linkedin.kafka.cruisecontrol.executor.ExecutionProposal;
 import com.linkedin.kafka.cruisecontrol.executor.ExecutionTask;
 import com.linkedin.kafka.cruisecontrol.model.ReplicaPlacementInfo;
+import org.apache.kafka.common.Cluster;
+import org.apache.kafka.common.PartitionInfo;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import org.apache.kafka.common.Cluster;
-import org.apache.kafka.common.PartitionInfo;
 
 /**
  * An abstract class for replica movement strategy. This class will be extended to create custom strategy to determine the
@@ -62,12 +62,13 @@ public abstract class AbstractReplicaMovementStrategy implements ReplicaMovement
   public Map<Integer, SortedSet<ExecutionTask>> applyStrategy(Set<ExecutionTask> replicaMovementTasks, StrategyOptions strategyOptions) {
     Map<Integer, SortedSet<ExecutionTask>> tasksByBrokerId = new HashMap<>();
 
-    for (ExecutionTask task : replicaMovementTasks) {
+    for (ExecutionTask task : preprocessReplicaMovements(replicaMovementTasks)) {
       ExecutionProposal proposal = task.proposal();
 
       // Add the task to source broker's execution plan
       SortedSet<ExecutionTask> sourceBrokerTaskSet = tasksByBrokerId.computeIfAbsent(proposal.oldLeader().brokerId(),
                                                                                      k -> new TreeSet<>(taskComparator(strategyOptions)));
+
       if (!sourceBrokerTaskSet.add(task)) {
         throw new IllegalStateException("Replica movement strategy " + this.getClass().getSimpleName() + " failed to determine order of tasks.");
       }
@@ -81,6 +82,7 @@ public abstract class AbstractReplicaMovementStrategy implements ReplicaMovement
         }
       }
     }
+
     return tasksByBrokerId;
   }
 
@@ -88,6 +90,10 @@ public abstract class AbstractReplicaMovementStrategy implements ReplicaMovement
   public Map<Integer, SortedSet<ExecutionTask>> applyStrategy(Set<ExecutionTask> replicaMovementTasks, Cluster cluster) {
     StrategyOptions strategyOptions = new StrategyOptions.Builder(cluster).build();
     return applyStrategy(replicaMovementTasks, strategyOptions);
+  }
+
+  protected SortedSet<ExecutionTask> preprocessReplicaMovements(Set<ExecutionTask> tasks) {
+    return new TreeSet<>(tasks);
   }
 
   protected static boolean isTaskInSet(ExecutionTask task, Set<PartitionInfo> partitionInfoSet) {
