@@ -25,6 +25,22 @@ public class SingleReplicaMovementStrategy extends BaseReplicaMovementStrategy {
         return expandExecutionTasks(tasks);
     }
 
+    @Override
+    public ReplicaMovementStrategy chain(ReplicaMovementStrategy strategy) {
+        throw new RuntimeException("it is invalid to chain other replica movement strategies to SingleReplicaMovementStrategy");
+    }
+
+    /**
+     * This strategy does not need to be chained to {@link BaseReplicaMovementStrategy} because it
+     * enforces the ordering from it already.
+     *
+     * @return This unchained replica movement strategy.
+     */
+    @Override
+    public ReplicaMovementStrategy chainBaseReplicaMovementStrategyIfAbsent() {
+        return this;
+    }
+
     /**
      * Takes an unordered set of {@link ExecutionTask} and expands any {@link ExecutionTask}
      * that contains multiple replica movements into ordered sets of {@link ExecutionTask} that

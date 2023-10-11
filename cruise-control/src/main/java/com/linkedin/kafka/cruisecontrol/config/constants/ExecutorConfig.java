@@ -13,7 +13,6 @@ import com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeOneAboveMinI
 import com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeSmallReplicaMovementStrategy;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
-
 import com.linkedin.kafka.cruisecontrol.executor.strategy.SingleReplicaMovementStrategy;
 import kafka.server.KafkaConfig;
 import org.apache.kafka.common.config.ConfigDef;

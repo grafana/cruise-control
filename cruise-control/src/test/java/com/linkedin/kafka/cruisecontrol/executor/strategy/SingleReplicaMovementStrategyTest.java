@@ -261,6 +261,11 @@ public class SingleReplicaMovementStrategyTest {
         }
     }
 
+    @Test
+    public void testThrowsRuntimeExceptionWhenChained() {
+        Assert.assertThrows(RuntimeException.class, () -> new SingleReplicaMovementStrategy().chain(new BaseReplicaMovementStrategy()));
+    }
+
     private List<ReplicaPlacementInfo> replicaSet(int... brokerIds) {
         List<ReplicaPlacementInfo> replicaSet = new ArrayList<>();
 
