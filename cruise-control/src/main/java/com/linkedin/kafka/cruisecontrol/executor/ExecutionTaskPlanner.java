@@ -183,6 +183,8 @@ public class ExecutionTaskPlanner {
   private void maybeAddInterBrokerReplicaMovementTasks(Collection<ExecutionProposal> proposals,
                                                        StrategyOptions strategyOptions,
                                                        ReplicaMovementStrategy replicaMovementStrategy) {
+    Set<ExecutionTask> added = new HashSet<>();
+
     for (ExecutionProposal proposal : proposals) {
       TopicPartition tp = proposal.topicPartition();
       PartitionInfo partitionInfo = strategyOptions.cluster().partition(tp);
@@ -196,7 +198,7 @@ public class ExecutionTaskPlanner {
                                                      _taskExecutionAlertingThresholdMs);
         ExecutionTask executionTask = new ExecutionTask(replicaActionExecutionId, proposal, INTER_BROKER_REPLICA_ACTION,
                                                         executionAlertingThresholdMs);
-        _remainingInterBrokerReplicaMovements.add(executionTask);
+        added.add(executionTask);
         LOG.trace("Added action {} as replica proposal {}", replicaActionExecutionId, proposal);
       }
     }
@@ -204,8 +206,12 @@ public class ExecutionTaskPlanner {
     ReplicaMovementStrategy chosenReplicaMovementTaskStrategy = replicaMovementStrategy == null
                                                                 ? _defaultReplicaMovementTaskStrategy
                                                                 : replicaMovementStrategy.chainBaseReplicaMovementStrategyIfAbsent();
-    _interPartMoveTasksByBrokerId = chosenReplicaMovementTaskStrategy.applyStrategy(_remainingInterBrokerReplicaMovements, strategyOptions);
+    _interPartMoveTasksByBrokerId = chosenReplicaMovementTaskStrategy.applyStrategy(added, strategyOptions);
     _interPartMoveBrokerComparator = brokerComparator(strategyOptions, chosenReplicaMovementTaskStrategy);
+
+    for (SortedSet<ExecutionTask> tasks : _interPartMoveTasksByBrokerId.values()) {
+      _remainingInterBrokerReplicaMovements.addAll(tasks);
+    }
   }
 
   /**

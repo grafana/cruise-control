@@ -7,7 +7,6 @@ package com.linkedin.kafka.cruisecontrol.detector;
 import com.linkedin.cruisecontrol.common.config.ConfigDef;
 import com.linkedin.kafka.cruisecontrol.KafkaCruiseControl;
 import com.linkedin.kafka.cruisecontrol.analyzer.ProvisionRecommendation;
-import java.util.Collections;
 import java.util.Map;
 
 import static com.linkedin.cruisecontrol.common.config.ConfigDef.Type.CLASS;

@@ -169,6 +169,10 @@ public class ExecutionTask implements Comparable<ExecutionTask> {
     return _brokerId;
   }
 
+  public long alertTimeMs() {
+    return _alertTimeMs;
+  }
+
   /**
    * Mark task in progress.
    *

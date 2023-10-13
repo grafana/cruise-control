@@ -4,6 +4,7 @@
 
 package com.linkedin.kafka.cruisecontrol.model;
 
+import java.util.Comparator;
 import java.util.Objects;
 
 
@@ -48,6 +49,29 @@ public class ReplicaPlacementInfo {
       return String.format("{Broker: %d}", _brokerId);
     } else {
       return String.format("{Broker: %d, Logdir: %s}", _brokerId, _logdir);
+    }
+  }
+
+  public static final class LeaderFirstComparator implements Comparator<ReplicaPlacementInfo> {
+    private final ReplicaPlacementInfo _leader;
+
+    private LeaderFirstComparator(ReplicaPlacementInfo leader) {
+      _leader = leader;
+    }
+
+    public static LeaderFirstComparator of(ReplicaPlacementInfo leader) {
+      return new LeaderFirstComparator(leader);
+    }
+
+    @Override
+    public int compare(ReplicaPlacementInfo a, ReplicaPlacementInfo b) {
+      if (a.equals(_leader)) {
+        return -1;
+      } else if (b.equals(_leader)) {
+        return 1;
+      } else {
+        return 0;
+      }
     }
   }
 }

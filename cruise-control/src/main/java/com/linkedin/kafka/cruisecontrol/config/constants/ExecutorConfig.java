@@ -13,6 +13,7 @@ import com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeOneAboveMinI
 import com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeSmallReplicaMovementStrategy;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
+import com.linkedin.kafka.cruisecontrol.executor.strategy.SingleReplicaMovementStrategy;
 import kafka.server.KafkaConfig;
 import org.apache.kafka.common.config.ConfigDef;
 
@@ -207,7 +208,9 @@ public final class ExecutorConfig {
       .add(PrioritizeSmallReplicaMovementStrategy.class.getName())
       .add(PrioritizeMinIsrWithOfflineReplicasStrategy.class.getName())
       .add(PrioritizeOneAboveMinIsrWithOfflineReplicasStrategy.class.getName())
-      .add(BaseReplicaMovementStrategy.class.getName()).toString();
+      .add(BaseReplicaMovementStrategy.class.getName())
+      .add(SingleReplicaMovementStrategy.class.getName())
+      .toString();
   public static final String REPLICA_MOVEMENT_STRATEGIES_DOC = "A list of supported strategies used to determine execution"
       + " order for generated partition movement tasks.";
 
