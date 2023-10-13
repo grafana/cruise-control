@@ -169,6 +169,15 @@ public final class ExecutorConfig {
       + "will also reduce the controller burden.";
 
   /**
+   * <code>num.concurrent.leader.movements.per.broker</code>
+   */
+  public static final String NUM_CONCURRENT_LEADER_MOVEMENTS_PER_BROKER_CONFIG = "num.concurrent.leader.movements.per.broker";
+  public static final int DEFAULT_NUM_CONCURRENT_LEADER_MOVEMENTS_PER_BROKER = 250;
+  public static final String NUM_CONCURRENT_LEADER_MOVEMENTS_PER_BROKER_DOC = "The initial maximum number of leader "
+      + "movements the executor will take for a broker as one batch. This is to avoid overwhelming the broker by LeaderAndIsr requests."
+      + "It cannot be greater than num.concurrent.leader.movements.";
+
+  /**
    * <code>max.num.cluster.movements</code>
    */
   public static final String MAX_NUM_CLUSTER_MOVEMENTS_CONFIG = "max.num.cluster.movements";
@@ -347,6 +356,17 @@ public final class ExecutorConfig {
       + "It cannot be (1) smaller than num.concurrent.leader.movements and (2) greater than max.num.cluster.movements.";
 
   /**
+   * <code>concurrency.adjuster.max.leadership.movements.per.broker</code>
+   */
+  public static final String CONCURRENCY_ADJUSTER_MAX_LEADERSHIP_MOVEMENTS_PER_BROKER_CONFIG =
+      "concurrency.adjuster.max.leadership.movements.per.broker";
+  public static final int DEFAULT_CONCURRENCY_ADJUSTER_MAX_LEADERSHIP_MOVEMENTS_PER_BROKER = 500;
+  public static final String CONCURRENCY_ADJUSTER_MAX_LEADERSHIP_MOVEMENTS_PER_BROKER_DOC = "The maximum number of leadership movements "
+      + "the concurrency auto adjustment will allow the executor to perform on a broker in one batch to avoid overwhelming the broker. "
+      + "It cannot be (1) smaller than num.concurrent.leader.movements.per.broker and "
+      + "(2) greater than concurrency.adjuster.max.leadership.movements.";
+
+  /**
    * <code>concurrency.adjuster.min.partition.movements.per.broker</code>
    */
   public static final String CONCURRENCY_ADJUSTER_MIN_PARTITION_MOVEMENTS_PER_BROKER_CONFIG =
@@ -367,6 +387,16 @@ public final class ExecutorConfig {
       + " It cannot be greater than num.concurrent.leader.movements.";
 
   /**
+   * <code>concurrency.adjuster.min.leadership.movements.per.broker</code>
+   */
+  public static final String CONCURRENCY_ADJUSTER_MIN_LEADERSHIP_MOVEMENTS_PER_BROKER_CONFIG =
+      "concurrency.adjuster.min.leadership.movements.per.broker";
+  public static final int DEFAULT_CONCURRENCY_ADJUSTER_MIN_LEADERSHIP_MOVEMENTS_PER_BROKER = 25;
+  public static final String CONCURRENCY_ADJUSTER_MIN_LEADERSHIP_MOVEMENTS_PER_BROKER_DOC = "The minimum number of leadership movements "
+      + "the concurrency auto adjustment will allow the executor to perform for a broker in one batch to avoid an unacceptable execution pace."
+      + " It cannot be greater than num.concurrent.leader.movements.per.broker.";
+
+  /**
    * <code>concurrency.adjuster.inter.broker.replica.enabled</code>
    */
   public static final String CONCURRENCY_ADJUSTER_INTER_BROKER_REPLICA_ENABLED_CONFIG = "concurrency.adjuster.inter.broker.replica.enabled";
@@ -380,6 +410,15 @@ public final class ExecutorConfig {
   public static final String CONCURRENCY_ADJUSTER_LEADERSHIP_ENABLED_CONFIG = "concurrency.adjuster.leadership.enabled";
   public static final boolean DEFAULT_CONCURRENCY_ADJUSTER_LEADERSHIP_ENABLED = false;
   public static final String CONCURRENCY_ADJUSTER_LEADERSHIP_ENABLED_DOC = "Enable concurrency adjuster for leadership reassignments.";
+
+  /**
+   * <code>concurrency.adjuster.leadership.per.broker.enabled</code>
+   */
+  public static final String CONCURRENCY_ADJUSTER_LEADERSHIP_PER_BROKER_ENABLED_CONFIG =
+      "concurrency.adjuster.leadership.per.broker.enabled";
+  public static final boolean DEFAULT_CONCURRENCY_ADJUSTER_LEADERSHIP_PER_BROKER_ENABLED = false;
+  public static final String CONCURRENCY_ADJUSTER_LEADERSHIP_PER_BROKER_ENABLED_DOC = "Enable concurrency adjuster for "
+      + "per broker leadership reassignments.";
 
   /**
    * <code>concurrency.adjuster.limit.log.flush.time.ms</code>
@@ -449,6 +488,16 @@ public final class ExecutorConfig {
       + "considered metrics are within the concurrency adjuster limit.";
 
   /**
+   * <code>concurrency.adjuster.additive.increase.leadership.per.broker</code>
+   */
+  public static final String CONCURRENCY_ADJUSTER_ADDITIVE_INCREASE_LEADERSHIP_PER_BROKER_CONFIG
+      = "concurrency.adjuster.additive.increase.leadership.per.broker";
+  public static final int DEFAULT_CONCURRENCY_ADJUSTER_ADDITIVE_INCREASE_LEADERSHIP_PER_BROKER = 25;
+  public static final String CONCURRENCY_ADJUSTER_ADDITIVE_INCREASE_LEADERSHIP_PER_BROKER_DOC = "The fixed number by which the "
+      + "per broker concurrency cap on leadership movements will be increased by the concurrency adjuster (if enabled) when all "
+      + "considered metrics are within the concurrency adjuster limit.";
+
+  /**
    * <code>concurrency.adjuster.multiplicative.decrease.inter.broker.replica</code>
    */
   public static final String CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_INTER_BROKER_REPLICA_CONFIG
@@ -467,6 +516,26 @@ public final class ExecutorConfig {
   public static final String CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_LEADERSHIP_DOC = "The fixed number by which the "
       + "concurrency cap on leadership movements will be divided by the concurrency adjuster (if enabled) when any "
       + "considered metric exceeds the concurrency adjuster limit.";
+
+  /**
+   * <code>concurrency.adjuster.multiplicative.decrease.leadership.per.broker</code>
+   */
+  public static final String CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_LEADERSHIP_PER_BROKER_CONFIG
+      = "concurrency.adjuster.multiplicative.decrease.leadership.per.broker";
+  public static final int DEFAULT_CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_LEADERSHIP_PER_BROKER = 2;
+  public static final String CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_LEADERSHIP_PER_BROKER_DOC = "The fixed number by which the "
+      + "per broker concurrency cap on leadership movements will be divided by the concurrency adjuster (if enabled) when any "
+      + "considered metric exceeds the concurrency adjuster limit.";
+
+  /**
+   * <code>min.num.brokers.violate.metric.limit.to.decrease.cluster.concurrency</code>
+   */
+  public static final String MIN_NUM_BROKERS_VIOLATE_METRIC_LIMIT_TO_DECREASE_CLUSTER_CONCURRENCY_CONFIG
+      = "min.num.brokers.violate.metric.limit.to.decrease.cluster.concurrency";
+  public static final int DEFAULT_MIN_NUM_BROKERS_VIOLATE_METRIC_LIMIT_TO_DECREASE_CLUSTER_CONCURRENCY = 2;
+  public static final String MIN_NUM_BROKERS_VIOLATE_METRIC_LIMIT_TO_DECREASE_CLUSTER_CONCURRENCY_DOC =
+      "The minimum number of brokers with metrics violating concurrency adjuster limits that can lead to "
+          + "cluster concurrency decrease.";
 
   /**
    * <code>list.partition.reassignment.timeout.ms</code>
@@ -652,6 +721,12 @@ public final class ExecutorConfig {
                             atLeast(1),
                             ConfigDef.Importance.MEDIUM,
                             NUM_CONCURRENT_LEADER_MOVEMENTS_DOC)
+                    .define(NUM_CONCURRENT_LEADER_MOVEMENTS_PER_BROKER_CONFIG,
+                            ConfigDef.Type.INT,
+                            DEFAULT_NUM_CONCURRENT_LEADER_MOVEMENTS_PER_BROKER,
+                            atLeast(1),
+                            ConfigDef.Importance.MEDIUM,
+                            NUM_CONCURRENT_LEADER_MOVEMENTS_PER_BROKER_DOC)
                     .define(MAX_NUM_CLUSTER_MOVEMENTS_CONFIG,
                             ConfigDef.Type.INT,
                             DEFAULT_MAX_NUM_CLUSTER_MOVEMENTS_CONFIG,
@@ -756,6 +831,12 @@ public final class ExecutorConfig {
                             atLeast(1),
                             ConfigDef.Importance.LOW,
                             CONCURRENCY_ADJUSTER_MAX_LEADERSHIP_MOVEMENTS_DOC)
+                    .define(CONCURRENCY_ADJUSTER_MAX_LEADERSHIP_MOVEMENTS_PER_BROKER_CONFIG,
+                            ConfigDef.Type.INT,
+                            DEFAULT_CONCURRENCY_ADJUSTER_MAX_LEADERSHIP_MOVEMENTS_PER_BROKER,
+                            atLeast(1),
+                            ConfigDef.Importance.LOW,
+                            CONCURRENCY_ADJUSTER_MAX_LEADERSHIP_MOVEMENTS_PER_BROKER_DOC)
                     .define(CONCURRENCY_ADJUSTER_MIN_PARTITION_MOVEMENTS_PER_BROKER_CONFIG,
                             ConfigDef.Type.INT,
                             DEFAULT_CONCURRENCY_ADJUSTER_MIN_PARTITION_MOVEMENTS_PER_BROKER,
@@ -768,6 +849,12 @@ public final class ExecutorConfig {
                             atLeast(1),
                             ConfigDef.Importance.LOW,
                             CONCURRENCY_ADJUSTER_MIN_LEADERSHIP_MOVEMENTS_DOC)
+                    .define(CONCURRENCY_ADJUSTER_MIN_LEADERSHIP_MOVEMENTS_PER_BROKER_CONFIG,
+                            ConfigDef.Type.INT,
+                            DEFAULT_CONCURRENCY_ADJUSTER_MIN_LEADERSHIP_MOVEMENTS_PER_BROKER,
+                            atLeast(1),
+                            ConfigDef.Importance.LOW,
+                            CONCURRENCY_ADJUSTER_MIN_LEADERSHIP_MOVEMENTS_PER_BROKER_DOC)
                     .define(CONCURRENCY_ADJUSTER_INTER_BROKER_REPLICA_ENABLED_CONFIG,
                             ConfigDef.Type.BOOLEAN,
                             DEFAULT_CONCURRENCY_ADJUSTER_INTER_BROKER_REPLICA_ENABLED,
@@ -778,6 +865,11 @@ public final class ExecutorConfig {
                             DEFAULT_CONCURRENCY_ADJUSTER_LEADERSHIP_ENABLED,
                             ConfigDef.Importance.HIGH,
                             CONCURRENCY_ADJUSTER_LEADERSHIP_ENABLED_DOC)
+                    .define(CONCURRENCY_ADJUSTER_LEADERSHIP_PER_BROKER_ENABLED_CONFIG,
+                            ConfigDef.Type.BOOLEAN,
+                            DEFAULT_CONCURRENCY_ADJUSTER_LEADERSHIP_PER_BROKER_ENABLED,
+                            ConfigDef.Importance.HIGH,
+                            CONCURRENCY_ADJUSTER_LEADERSHIP_PER_BROKER_ENABLED_DOC)
                     .define(CONCURRENCY_ADJUSTER_LIMIT_LOG_FLUSH_TIME_MS_CONFIG,
                             ConfigDef.Type.DOUBLE,
                             DEFAULT_CONCURRENCY_ADJUSTER_LIMIT_LOG_FLUSH_TIME_MS,
@@ -820,6 +912,12 @@ public final class ExecutorConfig {
                             atLeast(1),
                             ConfigDef.Importance.LOW,
                             CONCURRENCY_ADJUSTER_ADDITIVE_INCREASE_LEADERSHIP_DOC)
+                    .define(CONCURRENCY_ADJUSTER_ADDITIVE_INCREASE_LEADERSHIP_PER_BROKER_CONFIG,
+                            ConfigDef.Type.INT,
+                            DEFAULT_CONCURRENCY_ADJUSTER_ADDITIVE_INCREASE_LEADERSHIP_PER_BROKER,
+                            atLeast(1),
+                            ConfigDef.Importance.LOW,
+                            CONCURRENCY_ADJUSTER_ADDITIVE_INCREASE_LEADERSHIP_PER_BROKER_DOC)
                     .define(CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_INTER_BROKER_REPLICA_CONFIG,
                             ConfigDef.Type.INT,
                             DEFAULT_CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_INTER_BROKER_REPLICA,
@@ -832,6 +930,18 @@ public final class ExecutorConfig {
                             atLeast(2),
                             ConfigDef.Importance.LOW,
                             CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_LEADERSHIP_DOC)
+                    .define(CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_LEADERSHIP_PER_BROKER_CONFIG,
+                            ConfigDef.Type.INT,
+                            DEFAULT_CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_LEADERSHIP_PER_BROKER,
+                            atLeast(2),
+                            ConfigDef.Importance.LOW,
+                            CONCURRENCY_ADJUSTER_MULTIPLICATIVE_DECREASE_LEADERSHIP_PER_BROKER_DOC)
+                    .define(MIN_NUM_BROKERS_VIOLATE_METRIC_LIMIT_TO_DECREASE_CLUSTER_CONCURRENCY_CONFIG,
+                            ConfigDef.Type.INT,
+                            DEFAULT_MIN_NUM_BROKERS_VIOLATE_METRIC_LIMIT_TO_DECREASE_CLUSTER_CONCURRENCY,
+                            atLeast(1),
+                            ConfigDef.Importance.LOW,
+                            MIN_NUM_BROKERS_VIOLATE_METRIC_LIMIT_TO_DECREASE_CLUSTER_CONCURRENCY_DOC)
                     .define(LIST_PARTITION_REASSIGNMENTS_TIMEOUT_MS_CONFIG,
                             ConfigDef.Type.LONG,
                             DEFAULT_LIST_PARTITION_REASSIGNMENTS_TIMEOUT_MS,

@@ -424,6 +424,21 @@ public class ExecutorTest extends CCKafkaClientsIntegrationTestHarness {
   }
 
   @Test
+  public void testResetExecutionProgressCheckIntervalMs() {
+    KafkaCruiseControlConfig config = new KafkaCruiseControlConfig(getExecutorProperties());
+    Executor executor = new Executor(config, null, new MetricRegistry(), EasyMock.mock(MetadataClient.class),
+        null, EasyMock.mock(AnomalyDetectorManager.class));
+    long defaultExecutionProgressCheckIntervalMs = config.getLong(ExecutorConfig.EXECUTION_PROGRESS_CHECK_INTERVAL_MS_CONFIG);
+    executor.resetExecutionProgressCheckIntervalMs();
+    assertEquals(defaultExecutionProgressCheckIntervalMs, executor.executionProgressCheckIntervalMs());
+
+    // Set requestedExecutionProgressCheckIntervalMs
+    long requestedExecutionProgressCheckIntervalMs = 2 * defaultExecutionProgressCheckIntervalMs;
+    executor.setRequestedExecutionProgressCheckIntervalMs(requestedExecutionProgressCheckIntervalMs);
+    assertEquals(requestedExecutionProgressCheckIntervalMs, executor.executionProgressCheckIntervalMs());
+  }
+
+  @Test
   public void testExecutionKnobs() {
     KafkaCruiseControlConfig config = new KafkaCruiseControlConfig(getExecutorProperties());
     assertThrows(IllegalStateException.class,
@@ -470,6 +485,7 @@ public class ExecutorTest extends CCKafkaClientsIntegrationTestHarness {
     UserTaskManager.UserTaskInfo mockUserTaskInfo = getMockUserTaskInfo();
     // This tests runs two consecutive executions. First one completes w/o error, but the second one with error.
     UserTaskManager mockUserTaskManager = getMockUserTaskManager(RANDOM_UUID, mockUserTaskInfo, Arrays.asList(false, true));
+    mockUserTaskManager.logInExecutionTaskOperation();
     EasyMock.replay(mockMetadataClient, mockLoadMonitor, mockAnomalyDetectorManager, mockUserTaskInfo, mockUserTaskManager);
 
     Collection<ExecutionProposal> proposalsToExecute = Collections.singletonList(proposal);
@@ -483,6 +499,7 @@ public class ExecutorTest extends CCKafkaClientsIntegrationTestHarness {
                               null,
                               mockLoadMonitor,
                               null, null,
+                              null,
                               null,
                               null,
                               null,
@@ -522,6 +539,7 @@ public class ExecutorTest extends CCKafkaClientsIntegrationTestHarness {
                                                  null,
                                                  null,
                                                  null,
+                                                 null,
                                                  true,
                                                  RANDOM_UUID,
                                                  false,
@@ -535,6 +553,7 @@ public class ExecutorTest extends CCKafkaClientsIntegrationTestHarness {
                               null,
                               mockLoadMonitor,
                               null, null,
+                              null,
                               null,
                               null,
                               null,
@@ -681,6 +700,7 @@ public class ExecutorTest extends CCKafkaClientsIntegrationTestHarness {
                                                         UserTaskManager.UserTaskInfo userTaskInfo,
                                                         List<Boolean> completeWithError) {
     UserTaskManager mockUserTaskManager = EasyMock.mock(UserTaskManager.class);
+    mockUserTaskManager.logInExecutionTaskOperation();
     // Handle the case that the execution started, but did not finish.
     if (completeWithError.isEmpty()) {
       EasyMock.expect(mockUserTaskManager.markTaskExecutionBegan(uuid)).andReturn(userTaskInfo).once();
@@ -773,7 +793,7 @@ public class ExecutorTest extends CCKafkaClientsIntegrationTestHarness {
 
     executor.setGeneratingProposalsForExecution(RANDOM_UUID, ExecutorTest.class::getSimpleName, isTriggeredByUserRequest);
     executor.executeProposals(proposalsToExecute, Collections.emptySet(), null, mockLoadMonitor, null, null,
-                              null, null, null, null,
+                              null, null, null, null, null,
                               replicationThrottle, isTriggeredByUserRequest, RANDOM_UUID, false, false);
 
     if (verifyProgress) {
